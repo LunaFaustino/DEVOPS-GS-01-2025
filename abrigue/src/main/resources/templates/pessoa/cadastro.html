@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::content})}">
+
+<th:block th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 th:with="tituloEditar=#{pessoa.editar}, tituloNovo=#{pessoa.nova}">
+            <i class="fas fa-user me-2"></i>
+            <span th:text="${pessoa.id != null ? tituloEditar : tituloNovo}">Nova Pessoa</span>
+        </h2>
+        <a href="/pessoas" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i><span th:text="#{btn.voltar}">Voltar</span>
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form th:action="@{/pessoas}" th:object="${pessoa}" method="post">
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="nome" class="form-label" th:text="#{pessoa.nome.completo} + ' *'">Nome Completo *</label>
+                                <input type="text" class="form-control" id="nome" th:field="*{nome}"
+                                       th:classappend="${#fields.hasErrors('nome')} ? 'is-invalid' : ''"
+                                       th:placeholder="#{pessoa.nome.placeholder}">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('nome')}"
+                                     th:errors="*{nome}"></div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="idade" class="form-label" th:text="#{pessoa.idade}">Idade</label>
+                                <input type="number" class="form-control" id="idade" th:field="*{idade}"
+                                       th:classappend="${#fields.hasErrors('idade')} ? 'is-invalid' : ''"
+                                       th:placeholder="#{pessoa.idade.placeholder}" min="0">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('idade')}"
+                                     th:errors="*{idade}"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cpf" class="form-label" th:text="#{pessoa.cpf} + ' *'">CPF *</label>
+                                <input type="text" class="form-control" id="cpf" th:field="*{cpf}"
+                                       th:classappend="${#fields.hasErrors('cpf')} ? 'is-invalid' : ''"
+                                       th:placeholder="#{pessoa.cpf.placeholder}" maxlength="14"
+                                       oninput="formatCPF(this)">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('cpf')}"
+                                     th:errors="*{cpf}"></div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="telefone" class="form-label" th:text="#{pessoa.telefone}">Telefone</label>
+                                <input type="text" class="form-control" id="telefone" th:field="*{telefone}"
+                                       th:placeholder="#{pessoa.telefone.placeholder}" maxlength="15"
+                                       oninput="formatTelefone(this)">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="abrigo" class="form-label" th:text="#{pessoa.abrigo} + ' *'">Abrigo *</label>
+                                <select class="form-select" id="abrigo" th:field="*{abrigo.id}"
+                                        th:classappend="${#fields.hasErrors('abrigo')} ? 'is-invalid' : ''">
+                                    <option value="" th:text="#{pessoa.select.abrigo}">Selecione o abrigo</option>
+                                    <option th:each="abrigo : ${abrigos}"
+                                            th:value="${abrigo.id}"
+                                            th:text="${abrigo.nome}">Abrigo</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('abrigo')}"
+                                     th:errors="*{abrigo}"></div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="situacaoEspecial" class="form-label" th:text="#{pessoa.situacao.especial}">Situação Especial</label>
+                                <select class="form-select" id="situacaoEspecial" th:field="*{situacaoEspecial}">
+                                    <option th:each="situacao : ${situacaoOptions}" th:value="${situacao}">
+                                        <th:block th:switch="${situacao.name()}">
+                                            <span th:case="'NENHUMA'" th:text="#{situacao.nenhuma}">Nenhuma</span>
+                                            <span th:case="'IDOSO'" th:text="#{situacao.idoso}">Idoso</span>
+                                            <span th:case="'DEFICIENCIA'" th:text="#{situacao.deficiente}">Deficiente</span>
+                                            <span th:case="'GESTANTE'" th:text="#{situacao.gestante}">Gestante</span>
+                                            <span th:case="'CRIANCA'" th:text="#{situacao.crianca}">Criança</span>
+                                            <span th:case="'DOENCA_CRONICA'" th:text="#{situacao.doenca_cronica}">Doença Crônica</span>
+                                            <span th:case="*" th:text="${situacao.descricao}">Situação</span>
+                                        </th:block>
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/pessoas" class="btn btn-outline-secondary" th:text="#{btn.cancelar}">Cancelar</a>
+                            <button type="submit" class="btn btn-primary" th:with="btnAtualizar=#{btn.atualizar}, btnCadastrar=#{btn.cadastrar}">
+                                <i class="fas fa-save me-2"></i>
+                                <span th:text="${pessoa.id != null ? btnAtualizar : btnCadastrar}">Cadastrar</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatCPF(input) {
+            let value = input.value.replace(/\D/g, '');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            input.value = value;
+        }
+
+        function formatTelefone(input) {
+            let value = input.value.replace(/\D/g, '');
+            value = value.replace(/(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{5})(\d)/, '$1-$2');
+            input.value = value;
+        }
+    </script>
+</th:block>
+
+</html>
